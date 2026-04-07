@@ -11,9 +11,9 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     return {
-        "🎯 Faltas a Extremos": pd.read_csv("data_output/Faltas_Recibidas_Extremos.csv"),
-        "⚽ Goles y Asistencias": pd.read_csv("data_output/Goles_Asistencias_Extremos.csv"),
-        "🌍 Goles por Nacionalidad": pd.read_csv("data_output/Media_Goles_Nacionalidad.csv"),
+        "🎯 Faltas a Extremos": pd.read_csv("data_input/Faltas_Recibidas_Extremos.csv"),
+        "⚽ Goles y Asistencias": pd.read_csv("data_input/Goles_Asistencias_Extremos.csv"),
+        "🌍 Goles por Nacionalidad": pd.read_csv("data_input/Media_Goles_Nacionalidad.csv"),
     }
 
 data = load_data()

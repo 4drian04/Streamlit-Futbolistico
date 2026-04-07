@@ -37,9 +37,9 @@ def load_htmls():
 @st.cache_data
 def load_dataframes():
     return {
-        "Faltas recibidas por extremos": pd.read_csv("data_output/Faltas_Recibidas_Extremos.csv"),
-        "Gol/Asistencias extremos": pd.read_csv("data_output/Goles_Asistencias_Extremos.csv"),
-        "Media de goles por nacionalidad": pd.read_csv("data_output/Media_Goles_Nacionalidad.csv")
+        "Faltas recibidas por extremos": pd.read_csv("data_input/Faltas_Recibidas_Extremos.csv"),
+        "Gol/Asistencias extremos": pd.read_csv("data_input/Goles_Asistencias_Extremos.csv"),
+        "Media de goles por nacionalidad": pd.read_csv("data_input/Media_Goles_Nacionalidad.csv")
     }
 
 html_data = load_htmls()

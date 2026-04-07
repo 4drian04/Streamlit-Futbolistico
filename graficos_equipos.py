@@ -35,10 +35,10 @@ def load_htmls():
 @st.cache_data
 def load_dataframes():
     return {
-        "⚔️ Ataque vs Defensa": pd.read_csv("data_output/Ataques_vs_Defensas_Por_Equipo.csv"),
-        "🚀 Equipos Eficientes": pd.read_csv("data_output/Equipos_Eficientes_GD_Puntos_Por_Partido.csv"),
-        "👥 Media de Edad": pd.read_csv("data_output/Media_Edades_Equipos.csv"),
-        "📦 Distribución de Edades": pd.read_csv("data_output/Media_Edades_Equipos.csv"),
+        "⚔️ Ataque vs Defensa": pd.read_csv("data_input/Ataques_vs_Defensas_Por_Equipo.csv"),
+        "🚀 Equipos Eficientes": pd.read_csv("data_input/Equipos_Eficientes_GD_Puntos_Por_Partido.csv"),
+        "👥 Media de Edad": pd.read_csv("data_input/Media_Edades_Equipos.csv"),
+        "📦 Distribución de Edades": pd.read_csv("data_input/Media_Edades_Equipos.csv"),
     }
 
 

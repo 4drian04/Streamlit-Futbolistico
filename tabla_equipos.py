@@ -8,12 +8,12 @@ st.set_page_config(page_title="Tabla de equipos", layout="wide", page_icon="👥
 @st.cache_data
 def load_data():
     return {
-        "⚔️ Ataque vs Defensa": pd.read_csv("data_output/Ataques_vs_Defensas_Por_Equipo.csv"),
-        "🚀 Equipos Eficientes": pd.read_csv("data_output/Equipos_Eficientes_GD_Puntos_Por_Partido.csv"),
-        "🛡️ Ligas Defensivas": pd.read_csv("data_output/Ligas_Mas_Defensivas.csv"),
-        "⚽ Goles por Liga": pd.read_csv("data_output/Media_Goles_Partido_Ligas.csv"),
-        "🏆 Puntos por Liga": pd.read_csv("data_output/Media_Puntos_Partidos_Ligas.csv"),
-        "🤝 Victorias y Empates": pd.read_csv("data_output/Victorias_Empates_Por_Liga.csv"),
+        "⚔️ Ataque vs Defensa": pd.read_csv("data_input/Ataques_vs_Defensas_Por_Equipo.csv"),
+        "🚀 Equipos Eficientes": pd.read_csv("data_input/Equipos_Eficientes_GD_Puntos_Por_Partido.csv"),
+        "🛡️ Ligas Defensivas": pd.read_csv("data_input/Ligas_Mas_Defensivas.csv"),
+        "⚽ Goles por Liga": pd.read_csv("data_input/Media_Goles_Partido_Ligas.csv"),
+        "🏆 Puntos por Liga": pd.read_csv("data_input/Media_Puntos_Partidos_Ligas.csv"),
+        "🤝 Victorias y Empates": pd.read_csv("data_input/Victorias_Empates_Por_Liga.csv"),
     }
 
 data = load_data()
