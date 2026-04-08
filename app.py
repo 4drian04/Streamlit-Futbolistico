@@ -1,7 +1,4 @@
 import streamlit as st
-import pandas as pd
-import joblib
-import plotly.express as px
 
 st.set_page_config(page_title="App Fútbol", layout="wide", page_icon="⚽")
 
