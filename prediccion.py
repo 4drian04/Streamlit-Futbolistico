@@ -1,14 +1,37 @@
+"""
+Módulo: prediccion.py
+Descripción: Interfaz de usuario y lógica predictiva para el Scouting IA.
+Recopila estadísticas de jugadores, procesa métricas avanzadas (xG, xA, etc.)
+y utiliza un modelo de Machine Learning pre-entrenado para clasificar 
+su posición ideal en el campo.
+"""
+
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 import joblib
 
-# Configuración de página (debe ser el primer comando)
+# ==========================================
+# 1. CONFIGURACIÓN INICIAL
+# ==========================================
+# Configuración de la página (obligatorio como primer comando de Streamlit)
 st.set_page_config(page_title="Scouting IA", layout="wide", page_icon="⚽")
 
-# ── Cargar modelo (con cache) ──
+# Inicialización del historial en el estado de la sesión (Session State)
+# Esto permite que los datos de predicción persistan al navegar a la página de historial.
+if "historial" not in st.session_state:
+    st.session_state.historial = []
+
+# ==========================================
+# 2. CARGA DEL MODELO PREDICTIVO
+# ==========================================
 @st.cache_resource
 def cargar_modelo():
+    """
+    Carga el modelo de Machine Learning desde el sistema de archivos local.
+    Usa el decorador @st.cache_resource para evitar cargar el archivo .pkl 
+    repetidamente con cada interacción del usuario, mejorando el rendimiento.
+    """
     ruta = Path("modelos/pipeline_futbolistico.pkl")
     if not ruta.exists():
         return None
@@ -16,22 +39,29 @@ def cargar_modelo():
 
 modelo = cargar_modelo()
 
-# ── Cabecera de la App ─────────────────────────────────────────
+# ==========================================
+# 3. CABECERA DE LA APLICACIÓN
+# ==========================================
 st.title("⚽ Clasificador de Posiciones IA")
 st.markdown("""
 Descubre cuál es la posición ideal de un jugador basándote en su rendimiento en el campo. 
 Introduce sus estadísticas de la temporada y nuestro modelo de Machine Learning hará el resto.
 """)
-st.divider() # Línea separadora visual
+st.divider()
 
+# Control de errores: Detener la ejecución limpiamente si no hay modelo disponible
 if modelo is None:
     st.error("⚠️ Modelo no encontrado. Asegúrate de que 'pipeline_futbolistico.pkl' está en la carpeta 'modelos'.")
     st.stop()
 
-# ── Formulario Organizado ─────────────────────────────────────
+# ==========================================
+# 4. INTERFAZ DE ENTRADA DE DATOS (FORMULARIO)
+# ==========================================
+# El uso de st.form asegura que la página no se recargue constantemente;
+# agrupa todas las entradas y las envía juntas al pulsar el botón.
 with st.form("prediccion_form", border=True):
     
-    # SECCIÓN 1: Datos Generales
+    # --- Sección 1: Datos de Participación ---
     st.subheader("📋 Datos Generales")
     c1, c2 = st.columns(2)
     with c1:
@@ -40,9 +70,9 @@ with st.form("prediccion_form", border=True):
         time = st.number_input("Minutos jugados", min_value=1, max_value=9000, value=1800, step=10, 
                                help="Total de minutos en toda la temporada.")
     
-    st.write("") # Espacio en blanco
+    st.write("") # Espaciador visual
 
-    # SECCIÓN 2: Ataque y Creación
+    # --- Sección 2: Métricas Ofensivas ---
     st.subheader("🎯 Ataque y Creación")
     c3, c4, c5 = st.columns(3)
     with c3:
@@ -56,9 +86,9 @@ with st.form("prediccion_form", border=True):
         key_passes = st.number_input("Pases Clave", min_value=0, max_value=300, value=15, step=1,
                                      help="Pases que terminan en un tiro de un compañero.")
 
-    st.write("") # Espacio en blanco
+    st.write("") 
 
-    # SECCIÓN 3: Defensa y Disciplina
+    # --- Sección 3: Métricas Defensivas y Disciplinarias ---
     st.subheader("🛡️ Defensa y Disciplina")
     c6, c7, c8 = st.columns(3)
     with c6:
@@ -68,61 +98,98 @@ with st.form("prediccion_form", border=True):
     with c8:
         red_cards = st.number_input("Tarjetas Rojas", min_value=0, max_value=10, value=0, step=1)
 
-    st.write("") # Espacio en blanco para separar el botón
+    st.write("")
     
-    # Botón principal, ancho completo
+    # Botón de envío que activa el procesamiento del bloque de formulario
     enviado = st.form_submit_button("🔍 Analizar Perfil del Jugador", use_container_width=True, type="primary")
 
-# ── Procesamiento y Resultados ────────────────────────────────
+
+# ==========================================
+# 5. PROCESAMIENTO E INFERENCIA (MACHINE LEARNING)
+# ==========================================
 if enviado:
     with st.spinner("Analizando estadísticas con Inteligencia Artificial..."):
-        # 1. Cálculos de promedios
+        
+        # --- 5.1. Ingeniería de Características (Feature Engineering) ---
+        # Normalización de estadísticas base dividiendo por el volumen de partidos
         tackles_per_game = tackles / games
         goals_per_game = goals / games
         assists_per_game = assists / games
         key_passes_per_game = key_passes / games
+        
+        # Estimación de partidos completos jugados (basado en bloques de 90 mins)
         partidos_completos = time / 90 if time > 0 else 0.1
 
-        # 2. Estimación de métricas avanzadas (xG, xA, etc.)
+        # Estimación algorítmica de métricas subyacentes avanzadas (Expected Goals/Assists)
         xG = shots * 0.10          
         xA = key_passes * 0.10      
         npxG = npg                  
         xGChain = xG + xA + (partidos_completos * 0.3) 
         xGBuildup = partidos_completos * 0.25          
 
-        # 3. Creación del DataFrame
+        # --- 5.2. Preparación del Vector de Entrada ---
+        # El orden y nombre de las columnas debe coincidir exactamente con el dataset de entrenamiento del pipeline
         columnas = [
             "games", "time", "goals", "xG", "assists", "xA", "shots", "key_passes", 
             "yellow_cards", "red_cards", "npg", "npxG", "xGChain", "xGBuildup", "tackles", "tackles_per_game", 
-            "goals_per_game", "assists_per_game", "key_passes_per_game"]
+            "goals_per_game", "assists_per_game", "key_passes_per_game"
+        ]
         
         X = pd.DataFrame([[
             games, time, goals, xG, assists, xA, shots, key_passes, 
             yellow_cards, red_cards, npg, npxG, xGChain, xGBuildup, tackles, tackles_per_game, 
-            goals_per_game, assists_per_game, key_passes_per_game]], columns=columnas)
+            goals_per_game, assists_per_game, key_passes_per_game
+        ]], columns=columnas)
         
-        posiciones = [
-        "Defensa",
-        "Portero",
-        "Delantero",
-        "Centrocampista",
-        "Segundo delantero"]
+        # Mapeo posicional del output numérico del modelo a etiquetas legibles
+        posiciones = ["Defensa", "Portero", "Delantero", "Centrocampista", "Segundo delantero"]
 
-        # 4. Predicción
-        posicion = modelo.predict(X)[0]
-        proba = modelo.predict_proba(X)[0].max()
+        # --- 5.3. Predicción ---
+        # .predict() devuelve la clase ganadora, .predict_proba() el array de probabilidades de todas las clases
+        posicion_idx = modelo.predict(X)[0]
+        posicion_predicha = posiciones[posicion_idx]
+        
+        probas = modelo.predict_proba(X)[0]
+        proba_maxima = float(probas.max())
 
-        # 5. UI de Resultados (Dashboard style)
+        # ==========================================
+        # 6. VISUALIZACIÓN DE RESULTADOS Y REGISTRO GLOBAL
+        # ==========================================
         st.divider()
         st.subheader("📊 Resultado del Análisis")
         
+        # Mostrar KPIs de la inferencia
         res1, res2 = st.columns(2)
-        res1.metric(label="Posición Recomendada", value=str(posiciones[posicion]))
-        res2.metric(label="Nivel de Confianza (IA)", value=f"{proba:.1%}")
+        res1.metric(label="Posición Recomendada", value=str(posicion_predicha))
+        res2.metric(label="Nivel de Confianza (IA)", value=f"{proba_maxima:.1%}")
 
-        # Gráfico de barras más limpio
-        st.markdown("**Distribución de probabilidad por posición:**")
-        probas = modelo.predict_proba(X)[0]
+        # --- Construcción y almacenamiento del payload en la memoria de sesión ---
+        registro_analisis = {
+            "ID": len(st.session_state.historial) + 1,
+            "Posición": posicion_predicha,
+            "Confianza_str": f"{proba_maxima:.1%}",
+            "Confianza_num": proba_maxima, # Almacenado de forma numérica para permitir el filtrado matemático posterior
+            "Partidos": games,
+            "Goles": goals,
+            "Estadísticas": {
+                "Minutos": time,
+                "Goles (Sin Penalti)": npg,
+                "Asistencias": assists,
+                "Tiros Totales": shots,
+                "Pases Clave": key_passes,
+                "Entradas": tackles,
+                "Amarillas": yellow_cards,
+                "Rojas": red_cards
+            },
+            "Probas_crudas": probas.tolist() # Se convierte el array numpy a lista estándar para evitar problemas de serialización
+        }
         
-        df_probas = pd.DataFrame({"Posición": posiciones, "Probabilidad": probas})
-        st.bar_chart(df_probas.set_index("Posición"), color="#1f77b4") # Le damos un color azul elegante
+        st.session_state.historial.append(registro_analisis)
+
+        # Renderizado visual del gráfico de distribución
+        st.markdown("**Distribución de probabilidad por posición:**")
+        df_probas = pd.DataFrame({
+            "Posición": posiciones, 
+            "Probabilidad": probas
+        })
+        st.bar_chart(df_probas.set_index("Posición"), color="#1f77b4")
