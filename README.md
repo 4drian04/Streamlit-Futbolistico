@@ -53,25 +53,25 @@ El proyecto se divide en dos grandes bloques:
 1. **Clona el repositorio:**
    ```
    git clone https://github.com/4drian04/Streamlit-Futbolistico.git
-   cd football-scouting-ia
+   cd Streamlit-Futbolistico
    ```
-3. **Crea un entorno virtual (Recomendado):**
+2. **Crea un entorno virtual (Recomendado):**
    ```
    python -m venv venv
    source venv/bin/activate  # En Windows usa: venv\Scripts\activate
    ```
 
-5. **Instala las dependencias:**
+3. **Instala las dependencias:**
    ```
-   pip install streamlit pandas numpy scikit-learn joblib
+   pip install -r requirements.txt
    ```
-6. **Entrena el modelo (Opcional, si no tienes el archivo `.pkl`):**
+4. **Entrena el modelo (Opcional, si no tienes el archivo `.pkl`):**
    Si necesitas generar el archivo del modelo desde cero usando tus datos en `data_input/`:
    ```
    python train.py
    ```
    
-8. **Ejecuta la aplicación:**
+5. **Ejecuta la aplicación:**
    ```
    streamlit run app.py
    ```
