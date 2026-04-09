@@ -29,45 +29,53 @@ El proyecto se divide en dos grandes bloques:
 * **Visualización:** Plotly (HTML renderizado), Streamlit Components, Tableau Public
 
 ## 📁 Estructura del Proyecto
-
-[AQUÍ VA LA ESTRUCTURA DEL PROYECTO]
-football-scouting-ia
- |— data_input/           # Datasets CSV con estadísticas (equipos, jugadores, ligas)
- |— graphics/             # Gráficos exportados en formato HTML
- |— modelos/              # Modelos de Machine Learning serializados
- |   |— pipeline_futbolistico.pkl
- |— app.py                # Archivo principal y menú de navegación
- |— tabla_equipos.py      # Vista de datos tabulares de equipos
- |— tabla_jugadores.py    # Vista de datos tabulares de jugadores
- |— graficos_equipos.py   # Visualización e insights de equipos
- |— graficos_ligas.py     # Visualización e insights de ligas
- |— graficos_jugadores.py # Visualización e insights de jugadores
- |— tableau_dashboard.py  # Integración de Dashboards de Tableau
- |— prediccion.py         # Interfaz de IA y motor de predicción
- |— historial.py          # Gestión y vista del historial de predicciones
- |— train.py              # Script de entrenamiento del modelo de ML
+```
+📦 football-scouting-ia
+ ┣ 📂 data_input/           # Datasets con estadísticas de entrada
+ ┣ 📂 graphics/             # Gráficos exportados en formato HTML
+ ┣ 📂 modelos/              # Modelos de Machine Learning serializados
+ ┣ 📜 README.md             # Documentación principal del proyecto
+ ┣ 📜 app.py                # Archivo principal y menú de navegación
+ ┣ 📜 graficos_equipos.py   # Visualización e insights de equipos
+ ┣ 📜 graficos_jugadores.py # Visualización e insights de jugadores
+ ┣ 📜 graficos_ligas.py     # Visualización e insights de ligas
+ ┣ 📜 historial.py          # Gestión y vista del historial de predicciones
+ ┣ 📜 prediccion.py         # Interfaz de IA y motor de predicción
+ ┣ 📜 requirements.txt      # Dependencias y librerías del proyecto
+ ┣ 📜 tabla_equipos.py      # Vista de datos tabulares de equipos
+ ┣ 📜 tabla_jugadores.py    # Vista de datos tabulares de jugadores
+ ┣ 📜 tableau_dashboard.py  # Integración de Dashboards de Tableau
+ ┗ 📜 train.py              # Script de entrenamiento del modelo de ML
+```
 
 ## 🚀 Instalación y Uso
 
 1. **Clona el repositorio:**
-   git clone https://github.com/TU_USUARIO/football-scouting-ia.git
+   ```
+   git clone https://github.com/4drian04/Streamlit-Futbolistico.git
    cd football-scouting-ia
-
-2. **Crea un entorno virtual (Recomendado):**
+   ```
+3. **Crea un entorno virtual (Recomendado):**
+   ```
    python -m venv venv
    source venv/bin/activate  # En Windows usa: venv\Scripts\activate
+   ```
 
-3. **Instala las dependencias:**
-   (Asegúrate de tener un archivo `requirements.txt` o instala manualmente las librerías base)
+5. **Instala las dependencias:**
+   ```
    pip install streamlit pandas numpy scikit-learn joblib
-
-4. **Entrena el modelo (Opcional, si no tienes el archivo `.pkl`):**
+   ```
+6. **Entrena el modelo (Opcional, si no tienes el archivo `.pkl`):**
    Si necesitas generar el archivo del modelo desde cero usando tus datos en `data_input/`:
+   ```
    python train.py
-
-5. **Ejecuta la aplicación:**
+   ```
+   
+8. **Ejecuta la aplicación:**
+   ```
    streamlit run app.py
-
+   ```
+   
 ## 🤖 Sobre el Modelo de Machine Learning
 
 El archivo `train.py` contiene el flujo de trabajo de entrenamiento. Utiliza un `Pipeline` de Scikit-Learn que combina:
