@@ -1,14 +1,13 @@
-# tabla_html.py
 import streamlit as st
 import streamlit.components.v1 as components
 import os
 
 # ----------------------------
-# CARGA DE HTMLs
+# CARGA DE ARCHIVOS HTML
 # ----------------------------
 @st.cache_data
 def load_htmls():
-    base_path = "graphics"  # Carpeta donde están los HTML
+    base_path = "graphics"  # Carpeta contenedora de los gráficos HTML
 
     html_files = {
         "🛡️ Ligas más defensivas": "Ligas_Mas_Defensivas.html",
@@ -29,11 +28,11 @@ def load_htmls():
     return html_content
 
 # ----------------------------
-# FUNCION PARA GENERAR INSIGHT AUTOMÁTICO
+# FUNCIÓN PARA GENERAR INSIGHTS AUTOMÁTICOS
 # ----------------------------
-def generar_insight(tab_name):
+def generate_insight(tab_name):
     """
-    Insights rápidos para cada visualización de ligas.
+    Retorna insights descriptivos rápidos para cada visualización de ligas.
     """
     if tab_name == "🛡️ Ligas más defensivas":
         return "Muestra cuáles ligas conceden menos goles por partido, destacando su solidez defensiva."
@@ -46,12 +45,12 @@ def generar_insight(tab_name):
     return "Insight no disponible."
 
 # ----------------------------
-# CARGAR HTMLs
+# INICIALIZACIÓN DE DATOS
 # ----------------------------
-data = load_htmls()
+html_data = load_htmls()
 
 # ----------------------------
-# CABECERA DEL DASHBOARD
+# INTERFAZ PRINCIPAL
 # ----------------------------
 st.title("📊 Visualizaciones gráficas de ligas")
 st.markdown("""
@@ -60,29 +59,29 @@ Cada visualización incluye un insight automático y la opción de descargar el 
 """)
 
 # ----------------------------
-# CREAR TABS
+# GESTIÓN DE PESTAÑAS (TABS)
 # ----------------------------
-tab_names = list(data.keys())
-tabs = st.tabs(tab_names)
+tab_names = list(html_data.keys())
+ui_tabs = st.tabs(tab_names)
 
-for i, tab_name in enumerate(tab_names):
-    with tabs[i]:
-        st.subheader(tab_name)
+for i, current_tab_name in enumerate(tab_names):
+    with ui_tabs[i]:
+        st.subheader(current_tab_name)
 
-        # Insight dinámico
-        st.info(generar_insight(tab_name))
+        # Insight descriptivo dinámico
+        st.info(generate_insight(current_tab_name))
 
-        html = data[tab_name]
+        current_html = html_data[current_tab_name]
 
-        if html is not None:
-            # Mostrar HTML
-            components.html(html, height=800, scrolling=True)
+        if current_html is not None:
+            # Renderizar el gráfico HTML incrustado
+            components.html(current_html, height=800, scrolling=True)
 
-            # Botón para descargar
+            # Botón de descarga para el usuario
             st.download_button(
                 label="💾 Descargar gráfico HTML",
-                data=html,
-                file_name=f"{tab_name.replace(' ', '_')}.html",
+                data=current_html,
+                file_name=f"{current_tab_name.replace(' ', '_')}.html",
                 mime="text/html"
             )
         else:

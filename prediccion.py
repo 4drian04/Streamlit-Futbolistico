@@ -19,25 +19,25 @@ st.set_page_config(page_title="Scouting IA", layout="wide", page_icon="⚽")
 
 # Inicialización del historial en el estado de la sesión (Session State)
 # Esto permite que los datos de predicción persistan al navegar a la página de historial.
-if "historial" not in st.session_state:
-    st.session_state.historial = []
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 # ==========================================
 # 2. CARGA DEL MODELO PREDICTIVO
 # ==========================================
 @st.cache_resource
-def cargar_modelo():
+def load_model():
     """
     Carga el modelo de Machine Learning desde el sistema de archivos local.
     Usa el decorador @st.cache_resource para evitar cargar el archivo .pkl 
     repetidamente con cada interacción del usuario, mejorando el rendimiento.
     """
-    ruta = Path("modelos/pipeline_futbolistico.pkl")
-    if not ruta.exists():
+    model_path = Path("modelos/pipeline_futbolistico.pkl")
+    if not model_path.exists():
         return None
-    return joblib.load(ruta)
+    return joblib.load(model_path)
 
-modelo = cargar_modelo()
+ml_model = load_model()
 
 # ==========================================
 # 3. CABECERA DE LA APLICACIÓN
@@ -50,7 +50,7 @@ Introduce sus estadísticas de la temporada y nuestro modelo de Machine Learning
 st.divider()
 
 # Control de errores: Detener la ejecución limpiamente si no hay modelo disponible
-if modelo is None:
+if ml_model is None:
     st.error("⚠️ Modelo no encontrado. Asegúrate de que 'pipeline_futbolistico.pkl' está en la carpeta 'modelos'.")
     st.stop()
 
@@ -59,7 +59,7 @@ if modelo is None:
 # ==========================================
 # El uso de st.form asegura que la página no se recargue constantemente;
 # agrupa todas las entradas y las envía juntas al pulsar el botón.
-with st.form("prediccion_form", border=True):
+with st.form("prediction_form", border=True):
     
     # --- Sección 1: Datos de Participación ---
     st.subheader("📋 Datos Generales")
@@ -101,13 +101,13 @@ with st.form("prediccion_form", border=True):
     st.write("")
     
     # Botón de envío que activa el procesamiento del bloque de formulario
-    enviado = st.form_submit_button("🔍 Analizar Perfil del Jugador", use_container_width=True, type="primary")
+    is_submitted = st.form_submit_button("🔍 Analizar Perfil del Jugador", use_container_width=True, type="primary")
 
 
 # ==========================================
 # 5. PROCESAMIENTO E INFERENCIA (MACHINE LEARNING)
 # ==========================================
-if enviado:
+if is_submitted:
     with st.spinner("Analizando estadísticas con Inteligencia Artificial..."):
         
         # --- 5.1. Ingeniería de Características (Feature Engineering) ---
@@ -118,39 +118,39 @@ if enviado:
         key_passes_per_game = key_passes / games
         
         # Estimación de partidos completos jugados (basado en bloques de 90 mins)
-        partidos_completos = time / 90 if time > 0 else 0.1
+        full_matches = time / 90 if time > 0 else 0.1
 
         # Estimación algorítmica de métricas subyacentes avanzadas (Expected Goals/Assists)
         xG = shots * 0.10          
         xA = key_passes * 0.10      
         npxG = npg                  
-        xGChain = xG + xA + (partidos_completos * 0.3) 
-        xGBuildup = partidos_completos * 0.25          
+        xGChain = xG + xA + (full_matches * 0.3) 
+        xGBuildup = full_matches * 0.25          
 
         # --- 5.2. Preparación del Vector de Entrada ---
         # El orden y nombre de las columnas debe coincidir exactamente con el dataset de entrenamiento del pipeline
-        columnas = [
+        feature_columns = [
             "games", "time", "goals", "xG", "assists", "xA", "shots", "key_passes", 
             "yellow_cards", "red_cards", "npg", "npxG", "xGChain", "xGBuildup", "tackles", "tackles_per_game", 
             "goals_per_game", "assists_per_game", "key_passes_per_game"
         ]
         
-        X = pd.DataFrame([[
+        input_data = pd.DataFrame([[
             games, time, goals, xG, assists, xA, shots, key_passes, 
             yellow_cards, red_cards, npg, npxG, xGChain, xGBuildup, tackles, tackles_per_game, 
             goals_per_game, assists_per_game, key_passes_per_game
-        ]], columns=columnas)
+        ]], columns=feature_columns)
         
         # Mapeo posicional del output numérico del modelo a etiquetas legibles
-        posiciones = ["Defensa", "Portero", "Delantero", "Centrocampista", "Segundo delantero"]
+        target_positions = ["Defensa", "Portero", "Delantero", "Centrocampista", "Segundo delantero"]
 
         # --- 5.3. Predicción ---
         # .predict() devuelve la clase ganadora, .predict_proba() el array de probabilidades de todas las clases
-        posicion_idx = modelo.predict(X)[0]
-        posicion_predicha = posiciones[posicion_idx]
+        predicted_position_idx = ml_model.predict(input_data)[0]
+        predicted_position = target_positions[predicted_position_idx]
         
-        probas = modelo.predict_proba(X)[0]
-        proba_maxima = float(probas.max())
+        probs = ml_model.predict_proba(input_data)[0]
+        max_prob = float(probs.max())
 
         # ==========================================
         # 6. VISUALIZACIÓN DE RESULTADOS Y REGISTRO GLOBAL
@@ -160,36 +160,36 @@ if enviado:
         
         # Mostrar KPIs de la inferencia
         res1, res2 = st.columns(2)
-        res1.metric(label="Posición Recomendada", value=str(posicion_predicha))
-        res2.metric(label="Nivel de Confianza (IA)", value=f"{proba_maxima:.1%}")
+        res1.metric(label="Posición Recomendada", value=str(predicted_position))
+        res2.metric(label="Nivel de Confianza (IA)", value=f"{max_prob:.1%}")
 
         # --- Construcción y almacenamiento del payload en la memoria de sesión ---
-        registro_analisis = {
-            "ID": len(st.session_state.historial) + 1,
-            "Posición": posicion_predicha,
-            "Confianza_str": f"{proba_maxima:.1%}",
-            "Confianza_num": proba_maxima, # Almacenado de forma numérica para permitir el filtrado matemático posterior
-            "Partidos": games,
-            "Goles": goals,
-            "Estadísticas": {
-                "Minutos": time,
-                "Goles (Sin Penalti)": npg,
-                "Asistencias": assists,
-                "Tiros Totales": shots,
-                "Pases Clave": key_passes,
-                "Entradas": tackles,
-                "Amarillas": yellow_cards,
-                "Rojas": red_cards
+        analysis_record = {
+            "id": len(st.session_state.history) + 1,
+            "position": predicted_position,
+            "confidence_str": f"{max_prob:.1%}",
+            "confidence_num": max_prob, # Almacenado de forma numérica para permitir el filtrado matemático posterior
+            "matches": games,
+            "goals": goals,
+            "stats": {
+                "minutes": time,
+                "npg": npg,
+                "assists": assists,
+                "shots": shots,
+                "key_passes": key_passes,
+                "tackles": tackles,
+                "yellow_cards": yellow_cards,
+                "red_cards": red_cards
             },
-            "Probas_crudas": probas.tolist() # Se convierte el array numpy a lista estándar para evitar problemas de serialización
+            "raw_probs": probs.tolist() # Se convierte el array numpy a lista estándar para evitar problemas de serialización
         }
         
-        st.session_state.historial.append(registro_analisis)
+        st.session_state.history.append(analysis_record)
 
         # Renderizado visual del gráfico de distribución
         st.markdown("**Distribución de probabilidad por posición:**")
-        df_probas = pd.DataFrame({
-            "Posición": posiciones, 
-            "Probabilidad": probas
+        df_probs = pd.DataFrame({
+            "Posición": target_positions, 
+            "Probabilidad": probs
         })
-        st.bar_chart(df_probas.set_index("Posición"), color="#1f77b4")
+        st.bar_chart(df_probs.set_index("Posición"), color="#1f77b4")

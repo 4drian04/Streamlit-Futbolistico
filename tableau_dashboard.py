@@ -1,22 +1,25 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-
+# Configuración de la vista del dashboard
 st.set_page_config(page_title="Dashboards", layout="wide", page_icon="🖥️")
 
-# URLs optimizadas para embed
+# URLs optimizadas para la incrustación desde Tableau Public
 tableau_dashboards = {
     "Estadísticas equipos I": "https://public.tableau.com/views/3_2_GarciaGarcia_CaraballoBulnes/Dashboard1?:embed=y&:showVizHome=no",
     "Estadísticas Extremos": "https://public.tableau.com/views/3_2_GarciaGarcia_CaraballoBulnes/Dashboard2?:embed=y&:showVizHome=no",
     "Estadísticas equipos II": "https://public.tableau.com/views/3_2_GarciaGarcia_CaraballoBulnes/Dashboard3?:embed=y&:showVizHome=no"
 }
-alturas = {
+
+# Tamaños verticales dinámicos según el dashboard requerido
+iframe_heights = {
     "Estadísticas equipos I": 800,
     "Estadísticas Extremos": 800,
-    "Estadísticas equipos II": 1800  # más alto
+    "Estadísticas equipos II": 1800  # Formato más extendido
 }
 
-descripciones = {
+# Bloques de texto descriptivos
+descriptions = {
     "Estadísticas equipos I": """
     Este panel muestra un análisis comparativo del rendimiento de equipos y ligas de fútbol a partir de métricas ofensivas, defensivas y de eficiencia.
 
@@ -111,21 +114,22 @@ descripciones = {
     """
 }
 
-# Título
+# Título de la sección
 st.title("Dashboards de Tableau")
 
-# Crear tabs
-nombres = list(tableau_dashboards.keys())
-tabs = st.tabs(nombres)
+# Crear y estructurar pestañas
+dashboard_names = list(tableau_dashboards.keys())
+ui_tabs = st.tabs(dashboard_names)
 
-# Mostrar cada dashboard en su pestaña
-for i, tab_name in enumerate(nombres):
-    with tabs[i]:
-        st.subheader(tab_name)
-        if tab_name in descripciones:
+# Incrustar el iFrame correspondiente dentro de cada pestaña
+for i, current_tab_name in enumerate(dashboard_names):
+    with ui_tabs[i]:
+        st.subheader(current_tab_name)
+        if current_tab_name in descriptions:
             with st.expander("¿Qué estás viendo?", expanded=False):
-                st.markdown(descripciones[tab_name])
+                st.markdown(descriptions[current_tab_name])
 
-        url = tableau_dashboards[tab_name]
-
-        components.iframe(url, height=alturas[tab_name])
+        target_url = tableau_dashboards[current_tab_name]
+        
+        # Renderizado del componente iFrame de Tableau
+        components.iframe(target_url, height=iframe_heights[current_tab_name])

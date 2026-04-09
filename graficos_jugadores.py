@@ -1,10 +1,9 @@
-# tabla_html_insight.py
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
 import os
 
-# Configuración inicial
+# Configuración inicial de la página
 st.set_page_config(
     page_title="Visualizaciones de jugadores",
     page_icon="📈",
@@ -12,7 +11,7 @@ st.set_page_config(
 )
 
 # -----------------------------
-# CARGA HTML
+# CARGA DE HTML
 # -----------------------------
 @st.cache_data
 def load_htmls():
@@ -32,7 +31,7 @@ def load_htmls():
     return html_content
 
 # -----------------------------
-# CARGA DATAFRAMES PARA INSIGHT
+# CARGA DE DATAFRAMES PARA INSIGHTS
 # -----------------------------
 @st.cache_data
 def load_dataframes():
@@ -48,55 +47,54 @@ df_data = load_dataframes()
 # -----------------------------
 # GENERADOR DE INSIGHTS
 # -----------------------------
-def generar_insight(tab_name, df):
+def generate_insight(tab_name, df):
     if df is None or df.empty:
         return "No hay datos disponibles."
 
     try:
         if tab_name == "Faltas recibidas por extremos":
-            # Top extremo más faltado
-            top_total = df.loc[df["fouls_received"].idxmax()]
+            
+            top_total_fouls = df.loc[df["fouls_received"].idxmax()]
+            top_per_game = df.loc[df["fouls_per_game"].idxmax()]
 
-            # Top extremo más faltado por partido
-            top_por_partido = df.loc[df["fouls_per_game"].idxmax()]
-
-            # Extremos jóvenes (edad < 23) más faltados
-            jovenes = df[df["age"] < 23]
-            if not jovenes.empty:
-                top_joven = jovenes.loc[jovenes["fouls_received"].idxmax()]
-                joven_text = f"{top_joven['player_name']} ({top_joven['team_id']}) → {top_joven['fouls_received']} faltas"
+            # Extremos jóvenes (menores de 23 años) que reciben más faltas
+            young_players = df[df["age"] < 23]
+            if not young_players.empty:
+                top_young = young_players.loc[young_players["fouls_received"].idxmax()]
+                young_text = f"{top_young['player_name']} ({top_young['team_id']}) → {top_young['fouls_received']} faltas"
             else:
-                joven_text = "No hay extremos jóvenes destacados"
+                young_text = "No hay extremos jóvenes destacados"
 
             return f"""
             **Análisis de faltas a extremos**
 
-            **Extremo más faltado (total):** {top_total['player_name']}  → {top_total['fouls_received']} faltas
+            **Extremo más faltado (total):** {top_total_fouls['player_name']}  → {top_total_fouls['fouls_received']} faltas
 
-            **Extremo más faltado por partido:** {top_por_partido['player_name']} → {round(top_por_partido['fouls_per_game'],2)} faltas/partido
+            **Extremo más faltado por partido:** {top_per_game['player_name']} → {round(top_per_game['fouls_per_game'],2)} faltas/partido
 
-            **Extremo joven más faltado:** {joven_text}
+            **Extremo joven más faltado:** {young_text}
             """
 
         elif tab_name == "Gol/Asistencias extremos":
-            # Extremo con mayor contribución ofensiva
-            top_total = df.loc[df["total_contribution"].idxmax()]
+            
+            top_contribution = df.loc[df["total_contribution"].idxmax()]
 
             return f"""
             **Análisis de contribución ofensiva de extremos**
 
-            **Extremo con mayor contribución:** {top_total['player_name']} ({top_total['player_team_id']})  
-            Total de goles+asistencias: **{top_total['total_contribution']}**
+            **Extremo con mayor contribución:** {top_contribution['player_name']} ({top_contribution['player_team_id']})  
+            Total de goles+asistencias: **{top_contribution['total_contribution']}**
             """
 
         elif tab_name == "Media de goles por nacionalidad":
-            top_avg = df.loc[df["avg_goals"].idxmax()]
+            
+            top_avg_goals = df.loc[df["avg_goals"].idxmax()]
             top_total_goals = df.loc[df["total_goals"].idxmax()]
 
             return f"""
             **Análisis de goles por nacionalidad**
 
-            **Mayor promedio de goles por jugador:** {top_avg['nationality']} → {round(top_avg['avg_goals'],2)} goles por jugador
+            **Mayor promedio de goles por jugador:** {top_avg_goals['nationality']} → {round(top_avg_goals['avg_goals'],2)} goles por jugador
 
             **Nacionalidad con más goles totales:** {top_total_goals['nationality']} → {top_total_goals['total_goals']} goles
             """
@@ -106,32 +104,34 @@ def generar_insight(tab_name, df):
 
     return "Insight no disponible."
 
+# Interfaz de Usuario (UI) Principal
 st.title("📊 Visualizaciones interactivas de jugadores")
 st.markdown("Análisis de los diferentes extremos, en cuanto a contribuciones de gol (g/a) y faltas recibidas. Además, se muestra los goles por las diferentes nacionalidades")
 
-tabs = st.tabs(list(html_data.keys()))
+ui_tabs = st.tabs(list(html_data.keys()))
 
-for i, tab_name in enumerate(html_data.keys()):
-    with tabs[i]:
+for i, current_tab_name in enumerate(html_data.keys()):
+    with ui_tabs[i]:
 
-        st.subheader(tab_name)
+        st.subheader(current_tab_name)
 
-        df = df_data.get(tab_name)
-        html = html_data.get(tab_name)
+        current_df = df_data.get(current_tab_name)
+        current_html = html_data.get(current_tab_name)
 
-        st.success(generar_insight(tab_name, df))
+        # Mostrar insight generado
+        st.success(generate_insight(current_tab_name, current_df))
 
-        # Descarga del HTML
-        if html:
+        # Descarga e integración del archivo HTML
+        if current_html:
             st.download_button(
                 "📥 Descargar HTML",
-                data=html,
-                file_name=f"{tab_name}.html",
+                data=current_html,
+                file_name=f"{current_tab_name}.html",
                 mime="text/html",
                 key=f"dl_{i}"
             )
 
-            components.html(html, height=800, scrolling=True)
+            components.html(current_html, height=800, scrolling=True)
         else:
             st.warning("No se encontró el archivo HTML")
 

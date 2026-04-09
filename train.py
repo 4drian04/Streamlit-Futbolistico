@@ -10,25 +10,25 @@ from pathlib import Path
 import warnings
 
 def ignore_warnings():
-    # Ignorar advertencias para mantener limpia la salida en la consola
+    # Ignorar advertencias no críticas para mantener limpia la salida en la consola de ejecución
     warnings.filterwarnings('ignore')
 
 def create_output_directory(folder_name):
-    # Crear el directorio para guardar los graficos si no existe
+    # Crear el directorio estructurado para guardar los gráficos si este no existe
     os.makedirs(folder_name, exist_ok=True)
 
 def load_data(file_path):
-    # Cargar el conjunto de datos y seleccionar las columnas relevantes
-    df = pd.read_csv(file_path)
+    # Cargar el conjunto de datos completo y seleccionar exclusivamente las columnas relevantes para el modelo
+    raw_df = pd.read_csv(file_path)
     columns_to_keep = [
         "games", "time", "goals", "xG", "assists", "xA", "shots", 
         "key_passes", "yellow_cards", "red_cards", "position", 
         "npg", "npxG", "xGChain", "xGBuildup", "tackles"
     ]
-    return df[columns_to_keep]
+    return raw_df[columns_to_keep]
 
 def engineer_features(df):
-    # Crear nuevas caracteristicas basadas en promedios por partido
+    # Crear nuevas características de desempeño promediadas por el volumen de partidos
     df_engineered = df.copy()
     df_engineered['tackles_per_game'] = df_engineered['tackles'] / df_engineered['games']
     df_engineered['goals_per_game'] = df_engineered['goals'] / df_engineered['games']
@@ -37,18 +37,18 @@ def engineer_features(df):
     return df_engineered
 
 def prepare_features_and_labels(df):
-    # Limpiar la columna de posicion y separar caracteristicas de la etiqueta
+    # Limpiar la columna objetivo de la posición (etiqueta) y separarla de las características
     df["position"] = [x.split()[0] for x in df["position"]]
     
     X = df.drop("position", axis=1)
     y_raw = df["position"]
 
-    # Codificar las etiquetas de texto a valores numericos
+    # Codificar las etiquetas de texto de los objetivos a sus respectivos valores numéricos
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y_raw)
     class_names = label_encoder.classes_
 
-    # Mapear las siglas de las posiciones al espanol
+    # Mapear las siglas en inglés de las posiciones futbolísticas al español para la inferencia
     mapping = {
         "D": "Defensa",
         "GK": "Portero",
@@ -57,18 +57,20 @@ def prepare_features_and_labels(df):
         "S": "Segundo delantero"
     }
 
+    # Vectorización y aplicación del mapa de traducciones a los nombres de las clases del modelo
     vectorized_mapping_function = np.vectorize(lambda x: mapping.get(x, x))
     mapped_class_names = vectorized_mapping_function(class_names)
 
     return X, y, mapped_class_names
 
 def train_model(X, y):
-    # Dividir los datos y entrenar el pipeline
+    # Dividir estratificadamente los datos de entrenamiento y de test y entrenar el pipeline final
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y
     )
 
-    pipeline = Pipeline([
+    # Creación del Pipeline con transformaciones polinomiales para la expansión de características
+    model_pipeline = Pipeline([
         ('poly', PolynomialFeatures(degree=2, include_bias=False)),
         ('model', RandomForestClassifier(
             class_weight="balanced",
@@ -79,32 +81,33 @@ def train_model(X, y):
         ))
     ])
 
-    pipeline.fit(X_train, y_train)
+    # Ajuste e inferencia del modelo
+    model_pipeline.fit(X_train, y_train)
     
-    # Predecir en Train y en Test para poder evaluar el sobreajuste (overfitting)
-    y_pred_train = pipeline.predict(X_train)
-    y_pred_test = pipeline.predict(X_test)
+    # Predecir sobre los sets de Train y Test para permitir la posterior evaluación técnica de sobreajuste (overfitting)
+    y_pred_train = model_pipeline.predict(X_train)
+    y_pred_test = model_pipeline.predict(X_test)
     
-    return pipeline, X_train, X_test, y_train, y_test, y_pred_train, y_pred_test
+    return model_pipeline, X_train, X_test, y_train, y_test, y_pred_train, y_pred_test
 
 if __name__ == "__main__":
-    # 1. Configuracion inicial
+    # 1. Configuración de entorno inicial
     ignore_warnings()
-    file_path = "data_input/Estadisticas_Jugadores.csv"
-    graphics_folder = "model_info"
+    dataset_file_path = "data_input/Estadisticas_Jugadores.csv"
+    output_graphics_folder = "model_info"
     
-    # Crear carpeta para los graficos
-    create_output_directory(graphics_folder)
+    # Crear la carpeta de alojamiento de meta-gráficos
+    create_output_directory(output_graphics_folder)
     
-    # 2. Carga y preprocesamiento
-    df_raw = load_data(file_path)
+    # 2. Pipeline de Carga y preprocesamiento de datos
+    df_raw = load_data(dataset_file_path)
     df_engineered = engineer_features(df_raw)
-    X, y, mapped_class_names = prepare_features_and_labels(df_engineered)
+    X_features, y_target, mapped_class_names = prepare_features_and_labels(df_engineered)
     
-    # 3. Entrenamiento del modelo evaluando train y test
-    pipeline, X_train, X_test, y_train, y_test, y_pred_train, y_pred_test = train_model(X, y)
+    # 3. Entrenamiento del modelo evaluando particiones train/test
+    pipeline, X_train, X_test, y_train, y_test, y_pred_train, y_pred_test = train_model(X_features, y_target)
 
-    # 4. Almacenar el pipeline en disco
-    path_modelos= Path("modelos")
-    path_modelos.mkdir(exist_ok=True)
+    # 4. Serialización y almacenamiento del modelo final (Pipeline) en disco
+    models_path = Path("modelos")
+    models_path.mkdir(exist_ok=True)
     joblib.dump(pipeline, "modelos/pipeline_futbolistico.pkl")

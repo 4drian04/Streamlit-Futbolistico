@@ -1,10 +1,10 @@
-# tabla.py
 import streamlit as st
 import pandas as pd
 
+# Configuración inicial de la vista de tabla
 st.set_page_config(page_title="Tabla de equipos", layout="wide", page_icon="👥")
 
-# Carga de datos
+# Función para cargar los diferentes DataFrames desde los archivos CSV
 @st.cache_data
 def load_data():
     return {
@@ -16,9 +16,10 @@ def load_data():
         "🤝 Victorias y Empates": pd.read_csv("data_input/Victorias_Empates_Por_Liga.csv"),
     }
 
-data = load_data()
+csv_data = load_data()
 
-descripciones = {
+# Diccionario de descripciones explicativas de cada tabla
+descriptions = {
     "⚔️ Ataque vs Defensa": """
     Este análisis compara la capacidad ofensiva y defensiva de los equipos.  
     Permite identificar conjuntos equilibrados, dominantes o con carencias en alguna fase del juego.
@@ -49,52 +50,56 @@ descripciones = {
     Permite identificar ligas más equilibradas o dominadas por ciertos equipos.
     """
 }
-# Cabecera
+
+# Títulos de la interfaz
 st.title("📊 Análisis de Equipos y Ligas")
 st.markdown("""
 Sumérgete en un análisis detallado del rendimiento futbolístico.  
 Esta herramienta te permite explorar datos sobre capacidad ofensiva, solidez defensiva, eficiencia en puntos y patrones de juego en diferentes ligas, facilitando la comparación entre equipos y competiciones.
 """)
 
-# Pestañas
-tab_names = list(data.keys())
-tabs = st.tabs(tab_names)
+# Definición e iteración de pestañas para las tablas
+tab_names = list(csv_data.keys())
+ui_tabs = st.tabs(tab_names)
 
-# Tabs con filtros disponibles
-tabs_con_filtro = ["⚔️ Ataque vs Defensa", "🚀 Equipos Eficientes"]
+# Identificadores de las pestañas que requerirán filtros adicionales
+tabs_with_filter = ["⚔️ Ataque vs Defensa", "🚀 Equipos Eficientes"]
 
-# Contenido de cada pestaña
-for i, tab_name in enumerate(tab_names):
-    with tabs[i]:
-        df = data[tab_name].copy()
+# Renderizado del contenido de cada pestaña
+for i, current_tab_name in enumerate(tab_names):
+    with ui_tabs[i]:
+        # Copia local del DataFrame para aplicar filtros sin alterar el original
+        current_df = csv_data[current_tab_name].copy()
 
-        st.subheader(tab_name)
+        st.subheader(current_tab_name)
 
-        if tab_name in descripciones:
-                    with st.expander("¿Qué estás viendo?", expanded=True):
-                        st.markdown(descripciones[tab_name])
-        # Filtros
-        if tab_name in tabs_con_filtro and "name_league" in df.columns:
+        if current_tab_name in descriptions:
+            with st.expander("¿Qué estás viendo?", expanded=True):
+                st.markdown(descriptions[current_tab_name])
+                
+        # Creación y aplicación de filtros si corresponden a la pestaña
+        if current_tab_name in tabs_with_filter and "name_league" in current_df.columns:
             with st.container():
                 col1, col2 = st.columns([1, 3])
                 with col1:
                     st.markdown("### 🎛️ Filtros")
 
                 with col2:
-                    ligas = sorted(df["name_league"].dropna().unique())
-                    liga = st.selectbox(
+                    unique_leagues = sorted(current_df["name_league"].dropna().unique())
+                    selected_league = st.selectbox(
                         "Selecciona liga",
-                        options=["Todas"] + list(ligas),
-                        key=f"liga_{i}"
+                        options=["Todas"] + list(unique_leagues),
+                        key=f"league_{i}"
                     )
 
-                    if liga != "Todas":
-                        df = df[df["name_league"] == liga]
-        # Tabla
+                    if selected_league != "Todas":
+                        current_df = current_df[current_df["name_league"] == selected_league]
+                        
+        # Renderizado interactivo de la tabla de datos
         st.dataframe(
-            df,
+            current_df,
             use_container_width=True
         )
 
-        # Información extra
-        st.caption(f"📌 Total de registros: {len(df)}")
+        # Información metadatos extra
+        st.caption(f"📌 Total de registros: {len(current_df)}")
